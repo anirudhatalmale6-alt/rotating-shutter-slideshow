@@ -1,47 +1,63 @@
 /* ===========================================================================
    OPTIONAL OVERLAYS
-   The three layers from your brief: live counter, QR code, fullscreen button.
+   The layers from your brief: live counter, tint-state readout, QR code,
+   pause and fullscreen controls.
 
    None of this touches the animation. Delete this file, delete overlays.js,
-   and delete the three .overlay blocks from index.html and you are left with
+   and delete the .overlay blocks from index.html and you are left with
    nothing but the slideshow.
 
-   They sit at z-index 10, above the shutters, so they stay readable the whole
-   way through the cycle.
+   They sit at z-index 20, above the shutters (which are at 10), so they stay
+   readable the whole way through the cycle.
+
+   This is a deliberately plainer version of your AI Studio chrome. The
+   pieces it does not yet include are the prev/next buttons, the thumbnail
+   dots, the EXIF details modal, the expanded QR modal and the shortcuts
+   modal. Say the word and I will add them; they are all straightforward once
+   the animation underneath is settled.
    =========================================================================== */
 
 .overlay {
   position: absolute;
-  z-index: 10;
+  z-index: 20;
   font-family: "Roboto Mono", ui-monospace, monospace;
   color: #fff;
-  /* a soft dark halo so white stays legible over a pale photo */
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+
+/* the frosted pill your build used for every overlay chip */
+.overlay--counter,
+.overlay--state,
+.overlay--qr,
+.ctrl {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
 
 /* --------------------------------------------------------------------------
    LIVE COUNTER -- bottom left
-   No JavaScript. The four numbers are stacked on top of each other and each
-   one is shown for its own quarter of the same 20s cycle the photos use, so
-   it is impossible for the number to disagree with the photo on screen.
+   No JavaScript. The four numbers are stacked and each is shown for its own
+   quarter of the same 20s cycle the photos use, so the number on screen can
+   never disagree with the photo on screen.
    -------------------------------------------------------------------------- */
 .overlay--counter {
-  left: 4vmin;
-  bottom: 4vmin;
+  left: 1.5rem;
+  bottom: 1.5rem;
   display: flex;
   align-items: baseline;
-  gap: 0.4em;
-  font-size: 3.2vmin;
+  padding: 0.55rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
 
-/* a box just wide enough for two digits, so nothing shifts as it counts */
+/* a two-digit slot, so nothing shifts as it counts */
 .counter__n {
   position: absolute;
-  left: 0;
-  bottom: 0;
   opacity: 0;
   animation: counterTick var(--cycle) steps(1) infinite;
 }
@@ -57,105 +73,209 @@
   100% { opacity: 0; }
 }
 
-/* pushes the "/ 04" clear of the stacked digits */
+/* freeze the counter too, so it agrees with the frozen photo */
+body.is-paused .counter__n {
+  animation-play-state: paused;
+}
+
 .counter__total {
-  margin-left: 2.6em;
-  opacity: 0.65;
+  margin-left: 2.35em;
+  font-size: 0.75rem;
   font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.15em;
 }
 
 /* --------------------------------------------------------------------------
+   TINT STATE -- top left
+   Says out loud what the tint is doing, the way your badge did.
+   -------------------------------------------------------------------------- */
+.overlay--state {
+  left: 1.5rem;
+  top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.75rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.state__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #34d399; /* emerald while running */
+  animation: statePulse 2s ease-in-out infinite;
+}
+
+@keyframes statePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* running by default, amber and steady once paused */
+.state__paused { display: none; }
+
+body.is-paused .overlay--state {
+  background: rgba(69, 26, 3, 0.55);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+}
+body.is-paused .state__dot {
+  background: #fbbf24;
+  animation: none;
+}
+body.is-paused .state__running { display: none; }
+body.is-paused .state__paused  { display: inline; }
+
+/* --------------------------------------------------------------------------
    QR CODE -- bottom right
-   Replace qr.png with your own code and point the <a href> at the same URL
-   so a mouse click works as well as a phone camera.
+   Replace qr.png with your own and point the <a href> at the same address so
+   a mouse click goes where a phone camera goes.
    -------------------------------------------------------------------------- */
 .overlay--qr {
-  right: 4vmin;
-  bottom: 4vmin;
+  right: 1.5rem;
+  bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  border-radius: 1rem;
   text-decoration: none;
-  font-size: 1.6vmin;
-  font-weight: 700;
+  font-size: 0.625rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .overlay--qr img {
   display: block;
-  width: 14vmin;
-  height: 14vmin;
+  width: 6.5rem;
+  height: 6.5rem;
   /* the white quiet zone the code needs in order to scan reliably */
-  padding: 1vmin;
+  padding: 0.5rem;
   background: #fff;
-  border-radius: 0.6vmin;
-  image-rendering: pixelated; /* keeps the squares crisp when scaled up */
+  border-radius: 0.6rem;
+  image-rendering: pixelated; /* keeps the squares crisp when scaled */
 }
 
-.overlay--qr:hover img,
-.overlay--qr:focus-visible img {
-  outline: 2px solid #fff;
-  outline-offset: 0.5vmin;
+.overlay--qr:hover,
+.overlay--qr:focus-visible {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
 }
 
 /* --------------------------------------------------------------------------
-   FULLSCREEN BUTTON -- top right
-   overlays.js also binds the F key and a double-click anywhere on the page.
-   The button hides itself after a few idle seconds so it stays out of the
-   way on a display screen, and comes back the moment the mouse moves.
+   CONTROLS -- top right
+   Pause and fullscreen. overlays.js also binds Space and F, and hides these
+   after a few idle seconds so they stay out of the way on a display screen.
    -------------------------------------------------------------------------- */
-.overlay--fullscreen {
-  right: 4vmin;
-  top: 4vmin;
-  width: 7vmin;
-  height: 7vmin;
-  min-width: 38px;
-  min-height: 38px;
-  display: grid;
-  place-items: center;
-  padding: 1.4vmin;
-  cursor: pointer;
-  border: 2px solid rgba(255, 255, 255, 0.75);
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.22);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  transition: opacity 400ms ease, background 150ms linear, transform 150ms ease;
+.overlay--controls {
+  right: 1.5rem;
+  top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: opacity 400ms ease;
 }
 
-.overlay--fullscreen svg {
+.ctrl {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  padding: 0.7rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  color: #fff;
+  transition: background 150ms linear, transform 150ms ease;
+}
+
+.ctrl svg {
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: #fff;
+  stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.overlay--fullscreen:hover,
-.overlay--fullscreen:focus-visible {
-  background: rgba(0, 0, 0, 0.45);
-  transform: scale(1.06);
+.ctrl:hover,
+.ctrl:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.ctrl:active { transform: scale(0.95); }
+
+/* the play triangle is a solid shape, not an outline */
+.icon-play path { fill: currentColor; stroke: none; }
+
+/* show pause while running, play once paused */
+.icon-play { display: none; }
+body.is-paused .icon-pause { display: none; }
+body.is-paused .icon-play  { display: block; }
+
+/* amber pause button while paused, matching your build */
+body.is-paused [data-pause] {
+  background: #f59e0b;
+  border-color: #fbbf24;
+  color: #000;
+}
+body.is-paused [data-pause]:hover {
+  background: #fbbf24;
 }
 
 /* swap the arrows once we are actually fullscreen */
-.overlay--fullscreen .icon-collapse { display: none; }
-body.is-fullscreen .overlay--fullscreen .icon-expand { display: none; }
-body.is-fullscreen .overlay--fullscreen .icon-collapse { display: block; }
+.icon-collapse { display: none; }
+body.is-fullscreen .icon-expand   { display: none; }
+body.is-fullscreen .icon-collapse { display: block; }
 
-/* overlays.js adds .is-idle to <body> after a few seconds without a mouse */
-body.is-idle .overlay--fullscreen {
+/* overlays.js adds .is-idle to <body> after a few seconds without a mouse.
+   The controls fade, the counter, state and QR stay put. */
+body.is-idle .overlay--controls {
   opacity: 0;
   pointer-events: none;
 }
 
-/* on a touch screen there is no mouse to go idle, so keep it visible */
+/* never hide the controls while paused, you need the button to resume */
+body.is-idle.is-paused .overlay--controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* on a touch screen there is no mouse to go idle, so keep them visible */
 @media (hover: none) {
-  body.is-idle .overlay--fullscreen {
+  body.is-idle .overlay--controls {
     opacity: 1;
     pointer-events: auto;
   }
+}
+
+/* --------------------------------------------------------------------------
+   SMALL SCREENS
+   Shrink the chrome so it does not swallow the photo on a phone.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .overlay--counter,
+  .overlay--state,
+  .overlay--qr,
+  .overlay--controls {
+    left: auto;
+    right: auto;
+  }
+  .overlay--state    { top: 0.75rem; left: 0.75rem; font-size: 0.625rem; }
+  .overlay--controls { top: 0.75rem; right: 0.75rem; }
+  .overlay--counter  { bottom: 0.75rem; left: 0.75rem; font-size: 1.15rem; }
+  .overlay--qr       { bottom: 0.75rem; right: 0.75rem; padding: 0.55rem; }
+  .overlay--qr img   { width: 4rem; height: 4rem; }
+  .overlay--qr span  { display: none; }
+  .ctrl              { width: 2.25rem; height: 2.25rem; padding: 0.55rem; }
 }

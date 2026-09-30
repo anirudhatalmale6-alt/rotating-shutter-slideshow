@@ -1,39 +1,40 @@
 /* ===========================================================================
-   ROTATING SHUTTER SLIDESHOW
-   Plain CSS. No framework, no build step, no JavaScript.
+   KINETIC SHUTTER SLIDESHOW
+   Plain CSS. No React, no Tailwind, no build step, no JavaScript in the
+   animation itself.
 
-   Ported from the original pure-CSS effect (CodePen PJGqdE by Nathan Taylor)
-   with one behaviour change you asked for:
-
-     >>> the rust tint lifts off each photo while its rotation is paused,
-         so you see the photo in its true colours, then the tint comes
-         back as the photo swings away again.
+   This is a straight port of the animation out of your AI Studio build
+   (src/index.css + the markup in src/App.tsx). Same class behaviour, same
+   keyframes, same timings, same colours. What changed is only the plumbing:
+   four React components became four divs, and the fonts and photos now come
+   from your own server instead of fonts.googleapis.com.
 
    HOW THE TIMING WORKS
    --------------------
-   Everything hangs off two numbers, set just below:
+   Two numbers drive everything:
 
      --slide-time  5s   how long one photo owns the screen
      --cycle      20s   --slide-time x 4 photos
 
    Four things run on the 5s beat (shutters opening, photo tilting, tint
-   lifting) and two run on the 20s beat (which photo is showing, the hue).
-   Because they are all plain CSS animations started at page load they stay
-   locked together forever -- there is no clock to drift.
+   lifting) and two on the 20s beat (which photo shows, and the hue). They are
+   all plain CSS animations started at page load, so they stay locked together
+   forever. There is no clock and nothing to drift, which is the one real
+   advantage over the React version: that one drove a React counter off
+   Date.now() and requestAnimationFrame alongside the CSS, and the two could
+   disagree.
 
    Inside each 5 second beat:
 
-     0.00s  shutters shut, photo lying at -45 degrees
-     1.65s  photo has straightened up ....... ROTATION PAUSE BEGINS
-     2.00s  shutters fully open
-     2.20s  tint fully gone, photo in true colour
-     3.10s  tint starts returning
-     3.30s  photo starts tilting away ....... ROTATION PAUSE ENDS
+     0.00s  shutters shut, photo lying at -45 degrees, tint full
+     1.65s  photo straight and still, tint fully OFF   <-- pause begins
+     2.00s  shutters fully open, photo in true colour
+     3.30s  tint returning, photo starts tilting away  <-- pause ends
      3.50s  shutters start closing
-     5.00s  shutters shut again, next photo takes over
+     5.00s  shutters shut, next photo takes over
 
-   If you change --slide-time, change --cycle to four times it and nothing
-   else needs touching.
+   If you change --slide-time, set --cycle to four times it. Nothing else
+   needs touching.
    =========================================================================== */
 
 :root {
@@ -43,17 +44,17 @@
   --hue-offset: 0.625s; /* nudges the colour change into the shuttered moment */
 
   /* ---- colour ---- */
-  --tint: #b3401a;      /* the rust colour of the shutters and the tint */
+  --tint: #b3401a;      /* the rust of the shutters and of the photo tint */
 
   /* ---- shutter geometry ---- */
-  --shutter-size: 150vmax; /* oversized so the corners never show while it spins */
+  --shutter-size: 150vmax;  /* oversized so no corner shows while it spins */
   --shutter-travel: 65vmax; /* how far each half slides when it opens */
 }
 
 /* --------------------------------------------------------------------------
    PAGE SHELL
-   The slideshow fills the window and nothing scrolls.
-   100dvh is used where supported so mobile browser chrome cannot crop it.
+   Fills the window, nothing scrolls. 100dvh where supported so mobile
+   browser chrome cannot crop it.
    -------------------------------------------------------------------------- */
 html,
 body {
@@ -64,42 +65,61 @@ body {
   height: 100dvh;
   overflow: hidden;
   background-color: #000;
+  color: #fff;
+  font-family: "Hind", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
+/* --------------------------------------------------------------------------
+   THE HUE CYCLE
+   One quarter turn of the colour wheel per photo. Each step is taken while
+   the shutters are shut, so you never catch the colour sliding; that is what
+   --hue-offset buys you. It sits on the whole stage, so the shutters, the
+   rust ground and the tinted photo all shift together.
+   -------------------------------------------------------------------------- */
 .stage {
   position: absolute;
   inset: 0;
   overflow: hidden;
-}
-
-/* The ground the photos sit on. You catch a glimpse of it in the corners
-   while a photo is tilted, so it carries the same hue cycle as everything
-   else. */
-.stage__backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-color: var(--tint);
   animation: rotateHue var(--cycle) linear infinite;
   animation-delay: var(--hue-offset);
 }
 
+@keyframes rotateHue {
+  0%   { filter: hue-rotate(0deg); }
+  20%  { filter: hue-rotate(0deg); }
+  25%  { filter: hue-rotate(90deg); }
+  45%  { filter: hue-rotate(90deg); }
+  50%  { filter: hue-rotate(180deg); }
+  70%  { filter: hue-rotate(180deg); }
+  75%  { filter: hue-rotate(270deg); }
+  95%  { filter: hue-rotate(270deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
 /* --------------------------------------------------------------------------
    WHICH PHOTO IS SHOWING
-   Each slide is on screen for a quarter of the 20s cycle. steps(1) means it
-   cuts in and out instantly rather than fading -- the shutters are closed at
-   that instant, so the cut is never visible.
+   Each slide owns a quarter of the 20s cycle. steps(1) means it cuts in and
+   out instantly instead of fading, and because the shutters are shut at that
+   instant the cut is never visible.
+
+   The rust here is the ground the photos sit on. You catch it in the corners
+   for a split second while a photo is tilted.
    -------------------------------------------------------------------------- */
 .slides {
   position: absolute;
   inset: 0;
   z-index: 1;
+  background-color: var(--tint);
 }
 
 .slide {
   position: absolute;
   inset: 0;
   opacity: 0;
+  pointer-events: none;
   animation: showHideSlide var(--cycle) steps(1) infinite;
 }
 
@@ -123,11 +143,11 @@ body {
 
 /* ---- PHOTO LIST ------------------------------------------------------------
    One rule per photo: when its turn comes round. The photo file itself is set
-   on the element in index.html (style="--photo: url(...)") so you never have
-   to hunt through the stylesheet to swap an image.
+   on the element in index.html, so you never have to hunt through the
+   stylesheet to swap an image.
 
    For a 5th photo: add a 5th .slide in index.html, add a 5th line here with
-   animation-delay: calc(var(--slide-time) * 4), and set --cycle to
+   calc(var(--slide-time) * 4), and set --cycle to
    calc(var(--slide-time) * 5) at the top of this file.
    -------------------------------------------------------------------------- */
 .slide:nth-child(1) { animation-delay: calc(var(--slide-time) * 0); }
@@ -137,12 +157,19 @@ body {
 
 /* --------------------------------------------------------------------------
    THE TILT
-   Each photo arrives lying at -45 degrees, straightens up, holds dead still,
-   then swings out the other way. Both photo layers (see below) run this same
-   animation, so they move as one object.
+   The photo arrives lying at -45 degrees and slightly oversized, straightens
+   up, holds dead still through the middle of the beat, then swings out the
+   other way and shrinks a little.
    -------------------------------------------------------------------------- */
-.slide__photo,
-.slide__tint::before {
+.slide__photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: var(--photo);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform-origin: center center;
   animation: tiltInOut var(--slide-time) infinite;
 }
 
@@ -151,133 +178,73 @@ body {
     transform: rotate(-45deg) scale(1.1);
     animation-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
   }
-  33% { transform: rotate(0deg); }   /* straight: pause starts */
-  50% { transform: rotate(0deg); }
-  66% {                              /* pause ends */
-    transform: rotate(0deg);
+  33% { transform: rotate(0deg) scale(1); }   /* straight: pause starts */
+  50% { transform: rotate(0deg) scale(1); }
+  66% {                                        /* pause ends */
+    transform: rotate(0deg) scale(1);
     animation-timing-function: cubic-bezier(0.895, 0.03, 0.685, 0.22);
   }
   100% { transform: rotate(45deg) scale(0.9); }
 }
 
 /* --------------------------------------------------------------------------
-   THE TWO PHOTO LAYERS
+   THE TINT, AND THE CHANGE YOU WANTED
 
-   This pair is the whole trick behind the tint change. The same photo is
-   painted twice, one copy on top of the other:
+   A flat sheet of rust laid over the photo in hard-light. It is a child of
+   the photo, so it tilts with it and never drifts out of register.
 
-   .slide__photo   the photo exactly as you supplied it. No blend mode, no
-                   colour filter, nothing. This is what "true colour" means
-                   here, and it is the layer you see during the pause.
+   Fading this sheet out while the photo is held still is the whole effect:
+   the tint is full while the photo is moving, gone while it rests, and back
+   before it moves again. Nothing else has to change, and because the sheet
+   is one flat colour rather than a second copy of the photo, no image detail
+   is resampled and the photo stays exactly as sharp as the untinted one.
 
-   .slide__tint    the same photo again, hard-light blended over the rust
-                   colour and carried through the hue cycle. This is the
-                   tinted look from the original effect, and it sits on top.
-
-   Fading the tinted copy out during the rotation pause reveals the untouched
-   photo underneath; fading it back in restores the original look exactly,
-   because at full opacity the tinted copy is opaque and hides the layer
-   below it completely.
-
-   Why the tint is split across two elements (.slide__tint and its ::before):
-   the fade lives on the outer element and the tilt lives on the inner one.
-   Putting a fade and a tilt on the same element makes the browser hand that
-   element to the GPU as its own layer, and the photo then gets scaled twice
-   and comes out very slightly softer than the original while it is moving.
-   Keeping them on separate elements avoids that, and the moving photo stays
-   pixel-identical to the original effect.
+   The window 33% to 66% is the same window the tilt holds still in, so the
+   two are locked by construction rather than by matching numbers by hand.
    -------------------------------------------------------------------------- */
-.slide__photo,
-.slide__tint,
-.slide__tint::before {
+.slide__tint {
   position: absolute;
   inset: 0;
-}
-
-/* the honest layer: photo only */
-.slide__photo {
-  z-index: 1;
-  background-image: var(--photo);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-/* the fading wrapper: carries the fade and the hue cycle, never the tilt */
-.slide__tint {
   z-index: 2;
-  animation:
-    tintOffAtPause var(--slide-time) ease-in-out infinite,
-    rotateHue var(--cycle) linear infinite;
-  animation-delay: 0s, var(--hue-offset);
-}
-
-/* the tinted twin of the photo: carries the tilt and the rust blend */
-.slide__tint::before {
-  content: "";
-  background-image: var(--photo);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   background-color: var(--tint);
-  background-blend-mode: hard-light;
+  mix-blend-mode: hard-light;
+  pointer-events: none;
+  animation: tintInOut var(--slide-time) infinite;
+  transition: opacity 0.4s ease; /* for the smooth lift when you hit pause */
 }
 
-/* >>> THE CHANGE YOU ASKED FOR <<<
-   Tint on while the photo is moving, off while it is held still.
-   The percentages sit just inside the rotation pause (33% - 66% of the beat)
-   so the colour has settled before the photo stops and has come back before
-   it moves again.
-
-   Want the tint to stay on the whole time, like the original? Delete the
-   tintOffAtPause line from the animation above.
-   Want a longer look at the true colours? Widen 44% - 62% towards 34% - 65%. */
-@keyframes tintOffAtPause {
-  0%   { opacity: 1; }
-  32%  { opacity: 1; }   /* photo has just straightened */
-  44%  { opacity: 0; }   /* tint fully lifted, true colours */
-  62%  { opacity: 0; }
-  72%  { opacity: 1; }   /* tint back before the photo moves off */
-  100% { opacity: 1; }
-}
-
-/* --------------------------------------------------------------------------
-   THE HUE CYCLE
-   One quarter turn of the colour wheel per photo, and each step is taken
-   while the shutters are shut, so you never see the colour slide. That is
-   what --hue-offset is for.
-   -------------------------------------------------------------------------- */
-@keyframes rotateHue {
-  0%   { filter: hue-rotate(0deg); }
-  20%  { filter: hue-rotate(0deg); }
-  25%  { filter: hue-rotate(90deg); }
-  45%  { filter: hue-rotate(90deg); }
-  50%  { filter: hue-rotate(180deg); }
-  70%  { filter: hue-rotate(180deg); }
-  75%  { filter: hue-rotate(270deg); }
-  95%  { filter: hue-rotate(270deg); }
-  100% { filter: hue-rotate(360deg); }
+@keyframes tintInOut {
+  0% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  26%  { opacity: 0.85; }
+  33%  { opacity: 0; }   /* photo stops moving: tint OFF, true colours */
+  50%  { opacity: 0; }   /* resting: the pristine photograph */
+  66% {                  /* resting ends, movement resumes */
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.895, 0.03, 0.685, 0.22);
+  }
+  74%  { opacity: 0.85; }
+  100% { opacity: 1; }   /* full tint for the shutter transition */
 }
 
 /* --------------------------------------------------------------------------
    THE SHUTTERS
    One element, two halves drawn as ::before (top) and ::after (bottom). The
-   whole thing is far bigger than the screen and turns a half revolution
-   every two photos, which is why the split line is at a different angle each
+   whole thing is far larger than the screen and turns half a revolution
+   every two photos, which is why the split sits at a different angle each
    time it opens.
    -------------------------------------------------------------------------- */
 .shutters {
   position: absolute;
-  z-index: 2;
+  z-index: 10;
   height: var(--shutter-size);
   width: var(--shutter-size);
   left: calc(50% - (var(--shutter-size) / 2));
   top: calc(50% - (var(--shutter-size) / 2));
   pointer-events: none;
-  animation:
-    rotateFrame calc(var(--slide-time) * 2) linear infinite,
-    rotateHue var(--cycle) linear infinite;
-  animation-delay: 0s, var(--hue-offset);
+  animation: rotateFrame calc(var(--slide-time) * 2) linear infinite;
 }
 
 @keyframes rotateFrame {
@@ -307,11 +274,7 @@ body {
   animation: openBottom var(--slide-time) infinite;
 }
 
-/* The snap open is fast and mechanical, the close is a slow drift back.
-   (In the original stylesheet the 40% and 70% timing functions were spelt
-   "animation-timing-functon" and so were ignored by the browser, leaving
-   those segments on the default ease. They are simply written out as ease
-   here, which is what actually rendered.) */
+/* Snaps open fast and mechanical, holds, then accelerates shut. */
 @keyframes openTop {
   0% {
     transform: translate3d(-50%, 0, 0);
@@ -319,11 +282,11 @@ body {
   }
   40% {
     transform: translate3d(-50%, calc(var(--shutter-travel) * -1), 0);
-    animation-timing-function: ease;
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
   }
   70% {
     transform: translate3d(-50%, calc(var(--shutter-travel) * -1), 0);
-    animation-timing-function: ease;
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
   }
   100% { transform: translate3d(-50%, 0, 0); }
 }
@@ -335,13 +298,53 @@ body {
   }
   40% {
     transform: translate3d(-50%, var(--shutter-travel), 0);
-    animation-timing-function: ease;
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
   }
   70% {
     transform: translate3d(-50%, var(--shutter-travel), 0);
-    animation-timing-function: ease;
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
   }
   100% { transform: translate3d(-50%, 0, 0); }
+}
+
+/* --------------------------------------------------------------------------
+   PAUSED STATE
+   Space, or the pause button, adds .is-paused to the <body>. Every animation
+   freezes where it stands, the tint lifts off completely, and the hue filter
+   is cleared, so what is on screen is the photograph and nothing else.
+
+   This is pure CSS: one class on the body. The React version had to keep a
+   running timestamp and feed negative animation-delays back in to resync,
+   which is what made it complicated.
+
+   Remove class="has-pause" from <body> in index.html if you would rather the
+   page could not be paused at all.
+   -------------------------------------------------------------------------- */
+body.is-paused .stage,
+body.is-paused .slide,
+body.is-paused .slide__photo,
+body.is-paused .slide__tint,
+body.is-paused .shutters,
+body.is-paused .shutters::before,
+body.is-paused .shutters::after {
+  animation-play-state: paused;
+}
+
+/* Both of these need !important, and it is not sloppiness. A running
+   animation outranks an ordinary declaration in the CSS cascade, so plain
+   "opacity: 0" and "filter: none" lose to the keyframes that are setting
+   those same two properties. An important author declaration is the one
+   thing that does outrank an animation. Without it the tint still lifts by
+   luck wherever the keyframes happen to sit at zero, and the hue stays stuck
+   at 90, 180 or 270 degrees on photos 2, 3 and 4, so a "natural" paused
+   photo would come out colour-shifted. */
+body.is-paused .slide__tint {
+  opacity: 0 !important;
+}
+
+/* colours 100% authentic while paused */
+body.is-paused .stage {
+  filter: none !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -359,19 +362,33 @@ body {
   top: 50%;
   left: 50%;
   transform: translate3d(-50%, -50%, 0);
-  z-index: 3;
+  z-index: 5;
   color: #fff;
   font-family: "Abril Fatface", Georgia, serif;
-  line-height: 0.8;
+  line-height: 0.85;
   letter-spacing: -0.025em;
-  text-shadow: 0 0 0.5em rgba(179, 64, 26, 0.25);
+  text-shadow: 0 0 0.5em rgba(179, 64, 26, 0.35);
   mix-blend-mode: lighten;
-  text-align: left;
+  text-align: center;
+  pointer-events: auto;
 }
 
 .slide__caption span {
   display: block;
-  font-size: 15vmin;
+  font-size: clamp(3rem, 13vmin, 10rem);
+  white-space: nowrap;
+}
+
+.slide__caption .slide-subtitle {
+  display: block;
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: clamp(0.75rem, 1.8vmin, 1.1rem);
+  letter-spacing: 0.25em;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-top: 1.5vmin;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
 .button {
@@ -379,27 +396,28 @@ body {
   text-decoration: none;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 2vmin;
+  font-size: clamp(0.75rem, 1.8vmin, 1.1rem);
   display: inline-block;
   position: relative;
-  border: 3px solid #fff;
+  border: 2px solid #fff;
   box-shadow: -0.5vmin 0.5vmin 0 rgba(255, 255, 255, 0.5);
   background: transparent;
-  margin-top: 5vmin;
+  margin-top: 4vmin;
   mix-blend-mode: lighten;
   color: #fff;
-  padding: 2vmin 2vmin 1.8vmin 2vmin;
-  letter-spacing: 0.1em;
+  padding: 1.6vmin 2.4vmin;
+  letter-spacing: 0.12em;
   text-shadow: none;
   line-height: 1;
   transform: translate3d(0.5vmin, -0.5vmin, 0);
-  transition: all 100ms linear;
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
 .button:hover,
 .button:focus-visible {
   transform: translate3d(1vmin, -1vmin, 0);
-  box-shadow: -1vmin 1vmin 0 rgba(255, 255, 255, 0.5);
+  box-shadow: -1vmin 1vmin 0 rgba(255, 255, 255, 0.6);
   background: #fff;
   color: #000;
 }
