@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rotating Shutter Slideshow</title>
+
+<!-- No CDNs, no Google Fonts, no analytics. Every file below is on your own
+     server, so the page makes zero outside connections. -->
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="animation.css">
+
+<!-- OPTIONAL overlay layer (fullscreen button, slide counter, QR code).
+     Delete these two lines and the .overlay blocks near the bottom of this
+     file to strip the page back to just the animation. -->
+<link rel="stylesheet" href="overlays.css">
+
+<!-- Load all four photos up front so the very first cycle is already smooth.
+     (The original CodePen popped the 2nd/3rd/4th photo in late because of
+     this.) Keep one line per photo. -->
+<link rel="preload" as="image" href="photos/photo-1.jpg">
+<link rel="preload" as="image" href="photos/photo-2.jpg">
+<link rel="preload" as="image" href="photos/photo-3.jpg">
+<link rel="preload" as="image" href="photos/photo-4.jpg">
+</head>
+
+<!-- Remove the class "has-captions" to hide the big text on every photo. -->
+<body class="has-captions">
+
+<div class="stage">
+
+  <!-- The rust-coloured ground the photos sit on. Visible for a split second
+       in the corners while a photo is tilted. -->
+  <div class="stage__backdrop"></div>
+
+  <!-- ===================================================================
+       THE PHOTOS
+       One .slide per photo. To change a photo, change the --photo line.
+       To add a fifth photo, copy a whole .slide block and add the matching
+       nth-child rule in animation.css (search for "PHOTO LIST").
+       =================================================================== -->
+  <div class="slides">
+
+    <div class="slide" style="--photo: url('photos/photo-1.jpg')">
+      <div class="slide__photo"></div><!-- the photo, true colours -->
+      <div class="slide__tint"></div><!-- the rust tint, fades off at the pause -->
+      <div class="slide__caption">
+        <span>Photo</span>
+        <span>One</span>
+        <a class="button" href="#">Your Link Here</a>
+      </div>
+    </div>
+
+    <div class="slide" style="--photo: url('photos/photo-2.jpg')">
+      <div class="slide__photo"></div>
+      <div class="slide__tint"></div>
+      <div class="slide__caption">
+        <span>Photo</span>
+        <span>Two</span>
+        <a class="button" href="#">Your Link Here</a>
+      </div>
+    </div>
+
+    <div class="slide" style="--photo: url('photos/photo-3.jpg')">
+      <div class="slide__photo"></div>
+      <div class="slide__tint"></div>
+      <div class="slide__caption">
+        <span>Photo</span>
+        <span>Three</span>
+        <a class="button" href="#">Your Link Here</a>
+      </div>
+    </div>
+
+    <div class="slide" style="--photo: url('photos/photo-4.jpg')">
+      <div class="slide__photo"></div>
+      <div class="slide__tint"></div>
+      <div class="slide__caption">
+        <span>Photo</span>
+        <span>Four</span>
+        <a class="button" href="#">Your Link Here</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- The two geometric shutters that sweep across and rotate. Empty on
+       purpose: both halves are drawn by CSS (::before and ::after). -->
+  <div class="shutters"></div>
+
+
+  <!-- ===================================================================
+       OPTIONAL OVERLAYS
+       These three blocks are the layers from your brief. They are plain
+       HTML sitting on top of the animation and are safe to delete or
+       rewrite wholesale, they do not touch the effect underneath.
+       =================================================================== -->
+
+  <!-- Live counter. Pure CSS, no JavaScript: it can never drift out of sync
+       with the photos because it runs off the same 20s timeline. -->
+  <div class="overlay overlay--counter" aria-hidden="true">
+    <span class="counter__n">01</span>
+    <span class="counter__n">02</span>
+    <span class="counter__n">03</span>
+    <span class="counter__n">04</span>
+    <span class="counter__total">/ 04</span>
+  </div>
+
+  <!-- QR code. Swap qr.png for your own and set the link on the <a>. -->
+  <a class="overlay overlay--qr" href="#" target="_blank" rel="noopener">
+    <img src="qr.png" width="150" height="150" alt="Scan for more">
+    <span>Scan me</span>
+  </a>
+
+  <!-- Fullscreen control. Also bound to the F key and a double-click. -->
+  <button class="overlay overlay--fullscreen" type="button"
+          data-fullscreen aria-label="Toggle fullscreen">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path class="icon-expand"   d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+      <path class="icon-collapse" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>
+    </svg>
+  </button>
+
+</div>
+
+<script src="overlays.js"></script>
+</body>
+</html>

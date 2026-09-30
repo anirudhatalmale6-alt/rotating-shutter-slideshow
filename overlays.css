@@ -1,0 +1,161 @@
+/* ===========================================================================
+   OPTIONAL OVERLAYS
+   The three layers from your brief: live counter, QR code, fullscreen button.
+
+   None of this touches the animation. Delete this file, delete overlays.js,
+   and delete the three .overlay blocks from index.html and you are left with
+   nothing but the slideshow.
+
+   They sit at z-index 10, above the shutters, so they stay readable the whole
+   way through the cycle.
+   =========================================================================== */
+
+.overlay {
+  position: absolute;
+  z-index: 10;
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  color: #fff;
+  /* a soft dark halo so white stays legible over a pale photo */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+
+/* --------------------------------------------------------------------------
+   LIVE COUNTER -- bottom left
+   No JavaScript. The four numbers are stacked on top of each other and each
+   one is shown for its own quarter of the same 20s cycle the photos use, so
+   it is impossible for the number to disagree with the photo on screen.
+   -------------------------------------------------------------------------- */
+.overlay--counter {
+  left: 4vmin;
+  bottom: 4vmin;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  font-size: 3.2vmin;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* a box just wide enough for two digits, so nothing shifts as it counts */
+.counter__n {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  opacity: 0;
+  animation: counterTick var(--cycle) steps(1) infinite;
+}
+
+.counter__n:nth-of-type(1) { animation-delay: calc(var(--slide-time) * 0); }
+.counter__n:nth-of-type(2) { animation-delay: calc(var(--slide-time) * 1); }
+.counter__n:nth-of-type(3) { animation-delay: calc(var(--slide-time) * 2); }
+.counter__n:nth-of-type(4) { animation-delay: calc(var(--slide-time) * 3); }
+
+@keyframes counterTick {
+  0%   { opacity: 1; }
+  25%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* pushes the "/ 04" clear of the stacked digits */
+.counter__total {
+  margin-left: 2.6em;
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+/* --------------------------------------------------------------------------
+   QR CODE -- bottom right
+   Replace qr.png with your own code and point the <a href> at the same URL
+   so a mouse click works as well as a phone camera.
+   -------------------------------------------------------------------------- */
+.overlay--qr {
+  right: 4vmin;
+  bottom: 4vmin;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+  text-decoration: none;
+  font-size: 1.6vmin;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.overlay--qr img {
+  display: block;
+  width: 14vmin;
+  height: 14vmin;
+  /* the white quiet zone the code needs in order to scan reliably */
+  padding: 1vmin;
+  background: #fff;
+  border-radius: 0.6vmin;
+  image-rendering: pixelated; /* keeps the squares crisp when scaled up */
+}
+
+.overlay--qr:hover img,
+.overlay--qr:focus-visible img {
+  outline: 2px solid #fff;
+  outline-offset: 0.5vmin;
+}
+
+/* --------------------------------------------------------------------------
+   FULLSCREEN BUTTON -- top right
+   overlays.js also binds the F key and a double-click anywhere on the page.
+   The button hides itself after a few idle seconds so it stays out of the
+   way on a display screen, and comes back the moment the mouse moves.
+   -------------------------------------------------------------------------- */
+.overlay--fullscreen {
+  right: 4vmin;
+  top: 4vmin;
+  width: 7vmin;
+  height: 7vmin;
+  min-width: 38px;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 1.4vmin;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.22);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition: opacity 400ms ease, background 150ms linear, transform 150ms ease;
+}
+
+.overlay--fullscreen svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.overlay--fullscreen:hover,
+.overlay--fullscreen:focus-visible {
+  background: rgba(0, 0, 0, 0.45);
+  transform: scale(1.06);
+}
+
+/* swap the arrows once we are actually fullscreen */
+.overlay--fullscreen .icon-collapse { display: none; }
+body.is-fullscreen .overlay--fullscreen .icon-expand { display: none; }
+body.is-fullscreen .overlay--fullscreen .icon-collapse { display: block; }
+
+/* overlays.js adds .is-idle to <body> after a few seconds without a mouse */
+body.is-idle .overlay--fullscreen {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* on a touch screen there is no mouse to go idle, so keep it visible */
+@media (hover: none) {
+  body.is-idle .overlay--fullscreen {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
