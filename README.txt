@@ -26,7 +26,11 @@ fonts/          Abril Fatface, Roboto Mono and Hind, served from your server
 qr.png          placeholder QR code
 README.txt      this file
 
-Seventeen files, about 3 MB, and 3 MB of that is your four photographs.
+Optional, for 5 extra seconds on each photo (see the last section):
+animation-long-pause.css   the retimed keyframes
+long-pause.html            a copy of index.html that loads them, as a demo
+
+Nineteen files, about 3 MB, and 3 MB of that is your four photographs.
 
 
 HOW FAITHFUL IS IT
