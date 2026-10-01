@@ -175,3 +175,32 @@ port follows your AI Studio version of it, including the two places your
 version had already improved on the pen: the tint that lifts at the pause,
 and two keyframe timing functions the pen had misspelt as
 "animation-timing-functon" so the browser silently ignored them.
+
+
+A LONGER LOOK AT EACH PHOTO (animation-long-pause.css)
+------------------------------------------------------
+Optional add-on, demo at long-pause.html. Load it after animation.css and
+each photo gets 5 extra seconds of still, untinted display while the shutters
+sweep at exactly the speed they do now:
+
+    <link rel="stylesheet" href="animation.css">
+    <link rel="stylesheet" href="animation-long-pause.css">
+
+Remove that second line and you are back to the 5 second version.
+
+Setting --slide-time to 10s on its own does NOT do this. Every keyframe is a
+percentage of the beat, so doubling the beat doubles everything and the
+shutters would take 4 seconds to sweep instead of 2. The percentages have to
+be recomputed so the moving segments keep their current duration in seconds
+and only the hold absorbs the extra time. That file does the arithmetic and
+explains it, including the one piece that does not simply rescale: the
+shutter frame's rotation, which has to be redistributed so it keeps turning
+at 18 degrees per second whenever it is actually on screen.
+
+Verified by freezing both pages at ten matching moments through the sweep:
+pixel-identical at every one, so the shutter motion really is unchanged. The
+hold was checked at five points too and is completely static with the tint at
+zero throughout.
+
+Want a different amount, say 3 extra seconds rather than 5? Tell me the
+number and I will send the file.

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kinetic Shutter Slideshow &middot; 5 extra seconds on each photo</title>
+<meta name="description" content="An avant-garde HTML5 photographic slideshow featuring geometric rotating shutters, dynamic hue transitions, pause-state natural tint removal, fullscreen controls, live counter, and QR code overlay.">
+
+<!-- No CDNs, no Google Fonts, no analytics, no Gemini SDK. Every file below
+     is on your own server, so the page makes zero outside connections.
+     (Your AI Studio build pulled four families from fonts.googleapis.com,
+     which is the one thing in it that broke the "no outside data
+     connections" line in your brief.) -->
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="animation.css">
+
+<!-- The only difference from index.html. Loading this after animation.css
+     gives every photo 5 extra seconds of still, untinted display while the
+     shutters keep sweeping at exactly the same speed. Delete this line and
+     the page is identical to index.html. -->
+<link rel="stylesheet" href="animation-long-pause.css">
+
+<!-- OPTIONAL overlay layer (pause, fullscreen, counter, QR). Delete this
+     line, the .overlay blocks near the bottom of this file, and the
+     overlays.js line, to strip the page back to just the animation. -->
+<link rel="stylesheet" href="overlays.css">
+
+<!-- Load all four photos up front so the very first cycle is already smooth.
+     Keep one line per photo. -->
+<link rel="preload" as="image" href="photos/photo-1.jpg">
+<link rel="preload" as="image" href="photos/photo-2.jpg">
+<link rel="preload" as="image" href="photos/photo-3.jpg">
+<link rel="preload" as="image" href="photos/photo-4.jpg">
+</head>
+
+<!-- has-captions  shows the big title on each photo, remove to hide it
+     has-pause     allows Space / the pause button to stop the animation -->
+<body class="has-captions has-pause">
+
+<div class="stage">
+
+  <!-- ===================================================================
+       THE PHOTOS
+       One .slide per photo. To change a photo, change its --photo line.
+       To add a fifth, copy a whole .slide block and add the matching
+       nth-child rule in animation.css (search for "PHOTO LIST").
+       =================================================================== -->
+  <div class="slides">
+
+    <div class="slide" style="--photo: url('photos/photo-1.jpg')">
+      <div class="slide__photo">
+        <div class="slide__tint"></div><!-- rust sheet, lifts at the pause -->
+      </div>
+      <div class="slide__caption">
+        <span>MONOLITH</span>
+        <span class="slide-subtitle">Brutalist Architecture</span>
+        <button type="button" class="button">Discover</button>
+      </div>
+    </div>
+
+    <div class="slide" style="--photo: url('photos/photo-2.jpg')">
+      <div class="slide__photo">
+        <div class="slide__tint"></div>
+      </div>
+      <div class="slide__caption">
+        <span>SOLITUDE</span>
+        <span class="slide-subtitle">Volcanic Black Shore</span>
+        <button type="button" class="button">Discover</button>
+      </div>
+    </div>
+
+    <div class="slide" style="--photo: url('photos/photo-3.jpg')">
+      <div class="slide__photo">
+        <div class="slide__tint"></div>
+      </div>
+      <div class="slide__caption">
+        <span>VANGUARD</span>
+        <span class="slide-subtitle">Sculptural Tailoring</span>
+        <button type="button" class="button">Discover</button>
+      </div>
+    </div>
+
+    <div class="slide" style="--photo: url('photos/photo-4.jpg')">
+      <div class="slide__photo">
+        <div class="slide__tint"></div>
+      </div>
+      <div class="slide__caption">
+        <span>ATRIUM</span>
+        <span class="slide-subtitle">Minimalist Curves</span>
+        <button type="button" class="button">Discover</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- The two geometric shutters. Empty on purpose: both halves are drawn
+       by CSS (::before and ::after). -->
+  <div class="shutters"></div>
+
+
+  <!-- ===================================================================
+       OPTIONAL OVERLAYS
+       Plain HTML sitting on top of the animation. Safe to delete or
+       rewrite wholesale, none of it touches the effect underneath.
+       =================================================================== -->
+
+  <!-- Live counter. Pure CSS, no JavaScript: it runs off the same 20s
+       timeline as the photos, so it cannot drift out of sync with them. -->
+  <div class="overlay overlay--counter" aria-hidden="true">
+    <span class="counter__n">01</span>
+    <span class="counter__n">02</span>
+    <span class="counter__n">03</span>
+    <span class="counter__n">04</span>
+    <span class="counter__total">/ 04</span>
+  </div>
+
+  <!-- Tint state readout, mirrors your KINETIC TINT / TINT OFF badge. -->
+  <div class="overlay overlay--state">
+    <span class="state__dot"></span>
+    <span class="state__running">Kinetic tint</span>
+    <span class="state__paused">Tint off &middot; natural</span>
+  </div>
+
+  <!-- QR code. Swap qr.png for your own and set the link on the <a>. -->
+  <a class="overlay overlay--qr" href="#" target="_blank" rel="noopener">
+    <img src="qr.png" width="150" height="150" alt="Scan to open on mobile">
+    <span>Scan on mobile</span>
+  </a>
+
+  <!-- Controls. Pause is also bound to the Space bar, fullscreen to F. -->
+  <div class="overlay overlay--controls">
+    <button class="ctrl" type="button" data-pause aria-label="Pause slideshow">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <g class="icon-pause"><path d="M9 5v14M15 5v14"/></g>
+        <g class="icon-play"><path d="M8 5l11 7-11 7z"/></g>
+      </svg>
+    </button>
+    <button class="ctrl" type="button" data-fullscreen aria-label="Toggle fullscreen">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></g>
+        <g class="icon-collapse"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></g>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<script src="overlays.js"></script>
+</body>
+</html>

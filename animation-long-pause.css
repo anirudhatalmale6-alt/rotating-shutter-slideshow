@@ -1,0 +1,201 @@
+/* ===========================================================================
+   LONGER LOOK AT THE PHOTO
+   An optional add-on: 5 extra seconds of still, untinted photo on every
+   slide, with the shutters sweeping at exactly the speed they do now.
+
+   HOW TO USE IT
+   Load it straight after animation.css and it takes over:
+
+       <link rel="stylesheet" href="animation.css">
+       <link rel="stylesheet" href="animation-long-pause.css">
+
+   Remove the second line and you are back to the 5 second version. Nothing
+   in index.html or in animation.css has to change, because all this file
+   does is restate the four keyframe sets and two numbers.
+
+   WHY IT IS NOT JUST --slide-time: 10s
+   That was the obvious thing to try and it does not give you what you want.
+   Every keyframe in this effect is a PERCENTAGE of the beat, so doubling the
+   beat doubles everything: the shutters would take 4 seconds to sweep open
+   instead of 2 and the whole piece would feel like it was running in treacle.
+
+   The trick is to keep every MOVING segment at the same number of seconds it
+   takes now and let only the still part absorb the extra time. So each
+   percentage has to be worked out again against the longer beat:
+
+       new % = (the same moment in seconds / 10s) * 100
+
+   Which gives, with the 5 second figures alongside:
+
+       shutters sweep open    0.00 - 2.00s   0%   ->  20%   (was 0% ->  40%)
+       shutters stay open     2.00 - 8.50s  20%   ->  85%   (was 40% ->  70%)
+       shutters sweep shut    8.50 -10.00s  85%   -> 100%   (was 70% -> 100%)
+
+       photo rotates in       0.00 - 1.65s   0%   ->  16.5% (was 0% ->  33%)
+       photo holds still      1.65 - 8.30s  16.5% ->  83%   (was 33% ->  66%)
+       photo rotates out      8.30 -10.00s  83%   -> 100%   (was 66% -> 100%)
+
+   Every moving segment still lasts exactly as long as it does today, to the
+   millisecond. The hold goes from 1.65s to 6.65s, so you get your extra 5
+   seconds of pristine photograph and the shutters feel unchanged.
+
+   WANT A DIFFERENT HOLD, SAY 3 EXTRA SECONDS INSTEAD OF 5?
+   Set --slide-time to 8s, --cycle to 32s, and recompute each percentage as
+   (seconds / 8) * 100, keeping the seconds in the left-hand column above the
+   same except the two hold rows, which become 2.00-6.50s and 1.65-6.30s.
+   Tell me the number you want and I will just send you the file.
+   =========================================================================== */
+
+:root {
+  --slide-time: 10s;    /* 5s of movement + 5s of extra stillness */
+  --cycle: 40s;         /* --slide-time x 4 photos */
+  --hue-offset: 0s;     /* not needed any more, see the hue note below */
+}
+
+/* --------------------------------------------------------------------------
+   THE TILT
+   Same curves, same in and out durations, longer hold.
+   -------------------------------------------------------------------------- */
+@keyframes tiltInOut {
+  0% {
+    transform: rotate(-45deg) scale(1.1);
+    animation-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  16.5% { transform: rotate(0deg) scale(1); }  /* straight: hold starts */
+  49.75% { transform: rotate(0deg) scale(1); }
+  83% {                                        /* hold ends, 6.65s later */
+    transform: rotate(0deg) scale(1);
+    animation-timing-function: cubic-bezier(0.895, 0.03, 0.685, 0.22);
+  }
+  100% { transform: rotate(45deg) scale(0.9); }
+}
+
+/* --------------------------------------------------------------------------
+   THE TINT
+   Off for the whole of the longer hold, so the extra 5 seconds is 5 seconds
+   of the real photograph, not 5 seconds of rust.
+   -------------------------------------------------------------------------- */
+@keyframes tintInOut {
+  0% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  13%   { opacity: 0.85; }
+  16.5% { opacity: 0; }   /* photo stops moving: tint OFF, true colours */
+  83% {                   /* 6.65 seconds of pristine photograph */
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.895, 0.03, 0.685, 0.22);
+  }
+  87%   { opacity: 0.85; }
+  100%  { opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   THE SHUTTERS
+   2 seconds to sweep open and 1.5 to sweep shut, exactly as now. They just
+   wait longer in between.
+   -------------------------------------------------------------------------- */
+@keyframes openTop {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+    animation-timing-function: cubic-bezier(0.8, 0, 0.1, 1);
+  }
+  20% {
+    transform: translate3d(-50%, calc(var(--shutter-travel) * -1), 0);
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
+  }
+  85% {
+    transform: translate3d(-50%, calc(var(--shutter-travel) * -1), 0);
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
+  }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes openBottom {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+    animation-timing-function: cubic-bezier(0.8, 0, 0.1, 1);
+  }
+  20% {
+    transform: translate3d(-50%, var(--shutter-travel), 0);
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
+  }
+  85% {
+    transform: translate3d(-50%, var(--shutter-travel), 0);
+    animation-timing-function: cubic-bezier(0.6, 0.04, 0.98, 0.335);
+  }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+/* --------------------------------------------------------------------------
+   THE SHUTTER FRAME ROTATION
+   This is the one that does not simply rescale, and it is the reason the
+   obvious version of this file looks wrong.
+
+   The whole shutter assembly turns continuously, which is why the split sits
+   at a new angle each time it opens. It turns 90 degrees per photo, so its
+   animation is two photos long. Stretch the photo to 10 seconds and that
+   animation becomes 20 seconds, which means it turns at half the speed: the
+   split would visibly twist half as far while sweeping open, and you asked
+   for the shutters to behave exactly as they do now.
+
+   The fix uses a fact worth knowing: between 20% and 85% of each beat both
+   halves are slid right off the screen, so whatever the frame does in that
+   window is invisible. I checked rather than assumed, by freezing the page
+   at five different moments inside the hold, at five different frame angles,
+   and confirming the screen is pixel-for-pixel identical at all five.
+
+   So the rotation is no longer spread evenly. It turns at the original
+   18 degrees per second whenever you can see it, and quietly makes up the
+   difference while it is off screen:
+
+       0%    ->  10%    0 ->  36deg   sweeping open,  18 deg/s  (visible)
+       10%   ->  42.5% 36 ->  63deg   off screen,    4.2 deg/s  (hidden)
+       42.5% ->  50%   63 ->  90deg   sweeping shut,  18 deg/s  (visible)
+
+   then the same again for the second photo in the pair. Net 90 degrees per
+   photo, exactly as before, and every frame you can actually see matches the
+   5 second version.
+   -------------------------------------------------------------------------- */
+@keyframes rotateFrame {
+  0%     { transform: rotate(0deg); }
+  10%    { transform: rotate(36deg); }   /* first photo done sweeping open */
+  42.5%  { transform: rotate(63deg); }   /* first photo starts sweeping shut */
+  50%    { transform: rotate(90deg); }   /* first photo done */
+  60%    { transform: rotate(126deg); }  /* second photo done sweeping open */
+  92.5%  { transform: rotate(153deg); }  /* second photo starts sweeping shut */
+  100%   { transform: rotate(180deg); }
+}
+
+/* --------------------------------------------------------------------------
+   THE HUE CYCLE
+   This one needed more than rescaling. The colour has to change while the
+   shutters are shut, otherwise you watch it slide across the photo.
+
+   In the 5 second version the colour took a full second to swing round and
+   was hidden by --hue-offset nudging it into the closed moment. Stretch the
+   cycle to 40 seconds and that same 5% of the timeline becomes a 2 second
+   swing, which is now far too slow to hide in a 1.5 second close, so it
+   would show.
+
+   So instead of offsetting it, the swing is narrowed to 1 second and centred
+   on each beat boundary, which is the exact moment both shutters meet:
+   1 second either side of 10s, 20s, 30s and 40s is 2.5% of a 40 second
+   cycle. --hue-offset goes to 0 because the keyframes now place themselves.
+
+   The last swing, 98.75% to 100%, only gets the closing half second rather
+   than a full second, because the cycle ends there. It still finishes exactly
+   on the boundary with the shutters shut, and 360 degrees is the same colour
+   as 0, so the loop is seamless.
+   -------------------------------------------------------------------------- */
+@keyframes rotateHue {
+  0%      { filter: hue-rotate(0deg); }
+  23.75%  { filter: hue-rotate(0deg); }
+  26.25%  { filter: hue-rotate(90deg); }
+  48.75%  { filter: hue-rotate(90deg); }
+  51.25%  { filter: hue-rotate(180deg); }
+  73.75%  { filter: hue-rotate(180deg); }
+  76.25%  { filter: hue-rotate(270deg); }
+  98.75%  { filter: hue-rotate(270deg); }
+  100%    { filter: hue-rotate(360deg); }
+}
